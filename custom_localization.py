@@ -1,6 +1,3 @@
-import parameters
-
-
 messages={
     'ru': {
         'welcome': 'Привет! Я помогу тебе выучить глаголы на иврите.'
@@ -13,6 +10,7 @@ messages={
         ,'set_lang_success': 'Язык успешно обновлен! Теперь я буду спрашивать тебя на русском языке.'
         ,'set_level': 'Выбери уровень подготовки:'
         ,'set_level_success': 'Отлично! Теперь я буду тестировать тебя по глаголам на этот уровень.'
+        ,'set_test_level': 'Выбери по каким частям речи тебя тестировать:'
     },
     'en': {
         'welcome': "Hello! I'll help you learn hebrew verbs."
@@ -25,10 +23,10 @@ messages={
         ,'set_lang_success': 'Language was successfully changed! Now I will test you in English.'
         ,'set_level': 'Choose your Hebrew level:'
         ,'set_level_success': 'Great! Now I will test you with verbs for this level.'
+        ,'set_test_level': 'Choose which word types you would like to be tested with:'
     }
 }
 
-# messages = messages[parameters.lang]
 def get_message(text, lang):
     if lang == 'ru':
         return messages['ru'][text]

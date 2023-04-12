@@ -1,7 +1,5 @@
 import random
-import json
 import db_google_cloud as db
-import parameters
 
 def weighted_sample(population, weights, k):
     a = list()
@@ -12,20 +10,21 @@ def weighted_sample(population, weights, k):
         del weights[b]
     return a
 
-class TestEngine:
+# start
+def get_test_words(update):
+    test_mode = db.get_test_mode(update)
+    if test_mode is None: test_mode = 'shuffle'
+    match test_mode:
+        case 'nouns': word_type = 'noun'
+        case 'verbs': word_type = 'verb'
+        case 'adjectives': word_type = 'adjective'
+        case 'shuffle': word_type = random.choice(['noun', 'verb', 'adjective'])
+    known_verbs = db.get_words(update, word_type)
+    lang = known_verbs[0]['lang']
+    asked_verbs_dict = weighted_sample(known_verbs, [row['weight'] for row in known_verbs], k=4)
+    return word_type, asked_verbs_dict, lang
 
-    known_verbs = list()
-
-    # start
-    def initialize_words(self, user_id):
-        self.known_verbs = db.get_words(user_id, 'verb')
-        self.lang = self.known_verbs[0]['lang']
-
-    def pick_words(self):
-        asked_verbs_dict = weighted_sample(self.known_verbs, [row['weight'] for row in self.known_verbs], k=4)
-        return asked_verbs_dict
-
-    def get_word_order(self):
-        return random.sample(range(0,4), k=4)
+def get_word_order():
+    return random.sample(range(0,4), k=4)
 
 

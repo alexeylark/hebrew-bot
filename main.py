@@ -1,6 +1,6 @@
 import telebot
 from telebot import types
-from test_engine import TestEngine
+import test_engine as te
 import time
 import re
 import json
@@ -12,7 +12,6 @@ import os
 is_debug = False
 bot = telebot.TeleBot(os.environ['TOKEN'])
 test_chat_id = os.environ['TEST_CHAT_ID']
-te = TestEngine()
 
 def send_message(update, message_code, sleep_time=0, markup=None, no_localization=False, force_message=False):
     chat_id = update['chat_id']
@@ -55,36 +54,47 @@ def set_level_reply(update):
     #markup.add(types.InlineKeyboardButton(text='ב+', callback_data='bet_plus'))
     send_message(update, 'set_level', sleep_time=0.5, markup=markup)
 
+def set_test_mode_reply(update):
+    markup = types.InlineKeyboardMarkup()
+    lang = db.get_language(update)
+    markup.add(types.InlineKeyboardButton(text= 'Глаголы' if lang=='ru' else 'Verbs', callback_data='verbs'))
+    markup.add(types.InlineKeyboardButton(text= 'Существительные' if lang=='ru' else 'Nouns', callback_data='nouns'))
+    markup.add(types.InlineKeyboardButton(text= 'Прилагательные' if lang=='ru' else 'Adjectives', callback_data='adjectives'))
+    markup.add(types.InlineKeyboardButton(text= 'Перемешать' if lang=='ru' else 'Shuffle', callback_data='shuffle'))
+    send_message(update, 'set_test_mode', sleep_time=0.5, markup=markup)
+
+
 def start(update):
     db.add_user(update)
     db.add_words(update, 'alef')
     send_message(update, 'welcome', 0.5)
     send_message(update, 'lang', 1)
-    send_message(update, 'test', 1)
+ #   send_message(update, 'test', 1)
 
     
 def test(update):
-    user_id = update['user_id']
-    te.initialize_words(user_id)
-    picked_words = te.pick_words()
-    lang = te.lang
-    
+    word_type, picked_words, lang = te.get_test_words(update)
+    match word_type:
+        case 'verb': word_code='v'
+        case 'noun': word_code='n'
+        case 'adjective': word_code='a'
     markup = types.InlineKeyboardMarkup()
     for i in te.get_word_order():
         markup.add(types.InlineKeyboardButton(text=picked_words[i]['word'], 
-            callback_data=str(i) + lang + str(picked_words[i]['id']) + picked_words[0]['word']))
+            callback_data=word_code + str(i) + lang + str(picked_words[i]['id']) + picked_words[0]['word']))
 
     send_message(update, picked_words[0]['translation'], 0, markup=markup, force_message=True)  
 
 def check_result(update):
-    answer_num = update['callback_data'][0]
-    answer_id =  re.sub("[^0-9]", "", update['callback_data'][3:])
+    answer_num = update['callback_data'][1]
+    answer_id =  re.sub("[^0-9]", "", update['callback_data'][4:])
     button_data = update['reply_markup']
     k = [obj[0].callback_data for obj in button_data]
-    right_word = re.sub('[0-9]+', "", update['callback_data'][3:])
-    k.sort(key=lambda x: int(x[0]))
-    ids = ",".join([re.sub("[^0-9]", "", n[3:]) for n in k])
-    update['lang'] = update['callback_data'][1:3]
+    right_word = re.sub('[0-9]+', "", update['callback_data'][4:])
+    k.sort(key=lambda x: int(x[1]))
+    ids = ",".join([re.sub("[^0-9]", "", n[4:]) for n in k])
+    word_type = k[0]
+    update['lang'] = update['callback_data'][2:4]
     
     if int(answer_num) == 0:
         send_message(update, 'right', 0, no_localization=True)
@@ -153,7 +163,17 @@ def handler(request_json):
     else:
         if update['message_text'] == '/start':
             start(update)
-        if update['message_text'] == '/test':
+        if update['message_text'] == '/test_verbs':
+            db.set_test_mode(update, 'verbs')
+            test(update)
+        if update['message_text'] == '/test_adjectives':
+            db.set_test_mode(update, 'adjectives')
+            test(update)
+        if update['message_text'] == '/test_nouns':
+            db.set_test_mode(update, 'nouns')
+            test(update)
+        if update['message_text'] == '/test_shuffle':
+            db.set_test_mode(update, 'shuffle')
             test(update)
         if update['message_text'] == '/stop':
             stop(update)
@@ -179,8 +199,8 @@ def google_cloud_entry_point(event):
 
 if __name__ == "__main__":
     is_debug = True
-    #db.delete_user(0)
-    f = open('test_jsons/answer_callback.json')
+    #db.delete_user_cascade(0)
+    f = open('test_jsons/update_lang_callback.json')
     test_json = json.load(f)
     f.close()
     handler(json.dumps(test_json))

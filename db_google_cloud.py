@@ -1,4 +1,5 @@
 from connect_connector import connect_with_connector
+from sqlalchemy import text
 
 db = connect_with_connector()
 conn = db.connect()
@@ -8,7 +9,9 @@ def get_conn():
 
 def execute_sql(sql):
     res = None
-    res = get_conn().execute(sql)
+    conn = get_conn()
+    res = conn.execute(text(sql))
+    conn.commit()
     return res
 
 def add_update(update):
@@ -40,7 +43,8 @@ def remove_words(update, level):
                     );"""
     execute_sql(sql)
     
-def get_words(user_id, word_type):
+def get_words(update, word_type):
+    user_id = update['user_id']
     sql = f"""SELECT kw.word_id, w.translation, f.spelling, kw.word_weight, u.lang
                     FROM known_words AS kw
                     INNER JOIN users AS u ON kw.user_id = u.id
@@ -48,13 +52,12 @@ def get_words(user_id, word_type):
                     INNER JOIN {word_type}s_f AS f ON w.id = f.id AND w.lang = f.lang
                     WHERE kw.user_id = {user_id} 
                         AND kw.word_type = '{word_type}'
-                        
-                        AND f.code = 'INF-L';
+                        AND f.code IN ('INF-L', 's', 'ms-a');
             """
     result = execute_sql(sql).fetchall()
 
-    if result is None: # if a user was created before initialization was implemented
-        add_words(user_id, "alef")
+    if result is None or not result: # if a user was created before initialization was implemented
+        add_words(update, "alef")
         result = execute_sql(sql).fetchall()        
     
     result_dict = [dict(zip(['id','translation','word', 'weight', 'lang'], row)) for row in result]   
@@ -100,7 +103,22 @@ def get_language(update):
     result = execute_sql(sql).fetchone()[0]
     return result
 
-def delete_user(user_id):
+def get_test_mode(update):
+    user_id = update['user_id']
+    sql = f"""SELECT test_mode 
+            FROM users 
+            WHERE id = {user_id};"""
+    result = execute_sql(sql).fetchone()[0]
+    return result
+
+def set_test_mode(update, test_mode):
+    user_id = update['user_id']
+    sql = f"""UPDATE users
+            SET test_mode = '{test_mode}'
+            WHERE id = {user_id};"""
+    execute_sql(sql)
+
+def delete_user_cascade(user_id):
     sql = f"""DELETE FROM questions
             WHERE user_id = {user_id};"""
     execute_sql(sql)
