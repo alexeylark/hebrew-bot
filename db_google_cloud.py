@@ -63,9 +63,9 @@ def get_words(update, word_type):
     result_dict = [dict(zip(['id','translation','word', 'weight', 'lang'], row)) for row in result]   
     return result_dict
 
-def add_question(in_data, ids, answer_id):
+def add_question(in_data, ids, answer_id, word_type):
     sql = f"""INSERT INTO questions VALUES 
-                    ({in_data['message_id']}, to_timestamp({in_data['message_dt']}),{in_data['user_id']},'verb','{ids}',{answer_id})
+                    ({in_data['message_id']}, to_timestamp({in_data['message_dt']}),{in_data['user_id']},'{word_type}','{ids}',{answer_id})
                     ON CONFLICT (user_id,message_id) DO NOTHING;
             """
     execute_sql(sql)

@@ -101,7 +101,7 @@ def check_result(update):
     else:
         send_message(update, lozi.get_message('wrong', update['lang']) + right_word, 0, force_message=True)
     test(update)
-    db.add_question(update, ids, answer_id)
+    db.add_question(update, ids, answer_id, word_type)
 
 def stop(update):
     send_message(update, 'stop')
@@ -200,7 +200,7 @@ def google_cloud_entry_point(event):
 if __name__ == "__main__":
     is_debug = True
     #db.delete_user_cascade(0)
-    f = open('test_jsons/update_lang_callback.json')
+    f = open('test_jsons/answer_callback2.json')
     test_json = json.load(f)
     f.close()
     handler(json.dumps(test_json))
