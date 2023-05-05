@@ -15,13 +15,13 @@ def execute_sql(sql):
     return res
 
 def add_update(update):
-    sql = f"""INSERT INTO raw_updates VALUES (NOW(), '{str(update)}');"""
+    sql = f"""INSERT INTO raw_updates VALUES (NOW(), '{str(update).replace("'", "''")}');"""
     execute_sql(sql)
 
 
 def add_user(in_data):
     sql = f"""INSERT INTO users VALUES
-        ({in_data['user_id']}, '{in_data['username']}', '{in_data['first_name']}', '{in_data['last_name']}', '{in_data['lang']}', to_timestamp({in_data['message_dt']}), '{in_data['user_lang']}')
+        ({in_data['user_id']}, '{in_data['username']}', '{in_data['first_name'].replace("'", "''")}', '{in_data['last_name'].replace("'", "''")}', '{in_data['lang']}', to_timestamp({in_data['message_dt']}), '{in_data['user_lang']}')
         ON CONFLICT (id) DO NOTHING;"""
     execute_sql(sql)
 
