@@ -36,3 +36,4 @@ The bot has a limited set of words for each level of difficuly, and features a t
 - Python backend on Google Cloud Functions (stateless, serverless)
 - SQLAlchemy as a database connector
 - Pandas used in the relevance calculation algorithm (weights function)
+- Google PubSub event streaming to Google Object Storage (raw API requests, messages)
